@@ -1,5 +1,35 @@
 
 
+Aria 2.9.2-dev
+March 31, 2026
+---------------------------
+
+Build and packaging changes:
+* Converted libaria from ROS 1 catkin packaging to plain CMake packaging
+  so it can be discovered and built by colcon on modern systems.
+* Updated package.xml to declare CMake as the build tool, set the build
+  type export to cmake, and record the GPL-2.0-only license.
+* Modernized CMake packaging and installation:
+  * raised minimum CMake version to 3.16
+  * set C++17 as the build standard
+  * converted library setup to target-based CMake
+  * added install/export rules and generated CMake package config files
+    for downstream consumers
+
+Ubuntu 24.04 / GCC 13 compatibility fixes:
+* Replaced deprecated sys_errlist/sys_nerr usage in ArLog with strerror()
+  based error reporting.
+* Removed use of deprecated std::binary_function in map comparator helpers.
+* Fixed md5.cpp to include the public MD5 header correctly with the new
+  CMake include path layout.
+* Fixed Linux joystick code to use valid pointer checks and to accept file
+  descriptor 0 as a valid open descriptor.
+
+Validation:
+* Verified plain CMake configure/build works on Ubuntu 24.04.
+* Verified colcon build --packages-select libaria succeeds from the workspace
+  root.
+
 Aria 2.9.1
 October 14, 2016
 ---------------------------

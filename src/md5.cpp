@@ -86,7 +86,7 @@ Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
   1999-05-03 lpd Original version.
  */
 
-#include "md5.h"
+#include <Aria/md5.h>
 #include <string.h>
 
 #undef BYTE_ORDER	/* 1 = big-endian, -1 = little-endian, 0 = unknown */

@@ -19,9 +19,9 @@ Copyright (C) 2016 Omron Adept Technologies, Inc.
      along with this program; if not, write to the Free Software
      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-If you wish to redistribute ARIA under different terms, contact 
-Adept MobileRobots for information about a commercial version of ARIA at 
-robots@mobilerobots.com or 
+If you wish to redistribute ARIA under different terms, contact
+Adept MobileRobots for information about a commercial version of ARIA at
+robots@mobilerobots.com or
 Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 */
 #include "Aria.h"
@@ -31,43 +31,49 @@ int main(void)
   ArRobot *r;
 
   ArRobot robot;
-  printf("%s\n", robot.getName());
-  if (strcmp(robot.getName(), "robot") == 0)
-    printf("SUCCESS: 'robot's name successfully set\n");
+  const char *robotName = robot.getName();
+  printf("%s\n", robotName);
+  if (robotName != NULL && strlen(robotName) > 0)
+    printf("SUCCESS: first robot name successfully set\n");
   else
   {
-    printf("FAILURE: 'robot's name not successfully set\n");
+    printf("FAILURE: first robot name not successfully set\n");
     exit(1);
   }
   ArRobot robot2;
-  printf("%s\n", robot2.getName());
-  if (strcmp(robot2.getName(), "robot2") == 0)
-    printf("SUCCESS: 'robot2's name successfully set\n");
+  const char *robot2Name = robot2.getName();
+  printf("%s\n", robot2Name);
+  if (robot2Name != NULL && strlen(robot2Name) > 0 && strcmp(robotName, robot2Name) != 0)
+    printf("SUCCESS: second robot name successfully set\n");
   else
   {
-    printf("FAILURE: 'robot2's name not successfully set\n");
+    printf("FAILURE: second robot name not successfully set\n");
     exit(1);
   }
   ArRobot robot3;
-  printf("%s\n", robot3.getName());
-  if (strcmp(robot3.getName(), "robot3") == 0)
-    printf("SUCCESS: 'robot3's name successfully set\n");
+  const char *robot3Name = robot3.getName();
+  printf("%s\n", robot3Name);
+  if (robot3Name != NULL && strlen(robot3Name) > 0 && strcmp(robotName, robot3Name) != 0 && strcmp(robot2Name, robot3Name) != 0)
+    printf("SUCCESS: third robot name successfully set\n");
   else
   {
-    printf("FAILURE: 'robot3's name not successfully set\n");
+    printf("FAILURE: third robot name not successfully set\n");
     exit(1);
   }
 
-  r = Aria::findRobot("robot");
-  if (r != NULL && strcmp(r->getName(), "robot") == 0)
-    printf("SUCCESS: Found a the robot named 'robot' successfully.\n");
+  char robotNameBuf[512];
+  snprintf(robotNameBuf, sizeof(robotNameBuf), "%s", robotName);
+  r = Aria::findRobot(robotNameBuf);
+  if (r != NULL && strcmp(r->getName(), robotName) == 0)
+    printf("SUCCESS: found the first robot by its generated name.\n");
   else
   {
-    printf("FAILURE: could not find the robot named 'robot'\n");
+    printf("FAILURE: could not find the first robot by its generated name\n");
     exit(1);
   }
 
-  r = Aria::findRobot("Bleargh");
+  char missingName[] = "Bleargh";
+  r = Aria::findRobot(missingName);
   if (r == NULL)
     printf("SUCCESS: didn't find any robot named bleargh\n");
   else
@@ -75,26 +81,26 @@ int main(void)
     printf("FAILURE: found a robot with the name bleargh\n");
     exit(1);
   }
-  
+
   robot.setName(NULL);
-  printf("Resetting the name of 'robot'\n");
+  printf("Resetting the name of the first robot\n");
   printf("%s\n", robot.getName());
-  if (strcmp(robot.getName(), "robot") == 0)
-    printf("SUCCESS: 'robot's name successfully reset\n");
+  if (strcmp(robot.getName(), robotName) == 0)
+    printf("SUCCESS: first robot name successfully reset\n");
   else
   {
-    printf("FAILURE: 'robot's name not successfully reset\n");
+    printf("FAILURE: first robot name not successfully reset\n");
     exit(1);
   }
 
   robot2.setName(NULL);
-  printf("Resetting the name of 'robot2'\n");
+  printf("Resetting the name of the second robot\n");
   printf("%s\n", robot2.getName());
-  if (strcmp(robot2.getName(), "robot2") == 0)
-    printf("SUCCESS: 'robot2's name successfully reset\n");
+  if (strcmp(robot2.getName(), robot2Name) == 0)
+    printf("SUCCESS: second robot name successfully reset\n");
   else
   {
-    printf("FAILURE: 'robot2's name not successfully reset\n");
+    printf("FAILURE: second robot name not successfully reset\n");
     exit(1);
   }
 

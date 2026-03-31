@@ -19,9 +19,9 @@ Copyright (C) 2016 Omron Adept Technologies, Inc.
      along with this program; if not, write to the Free Software
      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-If you wish to redistribute ARIA under different terms, contact 
-Adept MobileRobots for information about a commercial version of ARIA at 
-robots@mobilerobots.com or 
+If you wish to redistribute ARIA under different terms, contact
+Adept MobileRobots for information about a commercial version of ARIA at
+robots@mobilerobots.com or
 Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 */
 #include <Aria/ArExport.h>
@@ -31,15 +31,14 @@ Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 #include <Aria/ArLog.h>
 #include <Aria/ariaUtil.h>
 
-AREXPORT ArTempDirectoryHelper::ArTempDirectoryHelper
-                                     (const char *baseDirectory,
-				                              const char *tempDirectory) :
-  myBaseDirectory((baseDirectory != NULL) ? baseDirectory : ""),
-  myTempDirectory((tempDirectory != NULL) ? tempDirectory : ""),
-  myPreMoveCallbacks(), 
-  myPostMoveCallbacks()
+AREXPORT ArTempDirectoryHelper::ArTempDirectoryHelper(const char *baseDirectory,
+                                                      const char *tempDirectory) : myBaseDirectory((baseDirectory != NULL) ? baseDirectory : ""),
+                                                                                   myTempDirectory((tempDirectory != NULL) ? tempDirectory : ""),
+                                                                                   myPreMoveCallbacks(),
+                                                                                   myPostMoveCallbacks()
 {
-  if (myTempDirectory.empty()) {
+  if (myTempDirectory.empty())
+  {
     myTempDirectory = myBaseDirectory;
   }
 } // end ctor
@@ -48,29 +47,26 @@ AREXPORT ArTempDirectoryHelper::~ArTempDirectoryHelper()
 {
 }
 
-  
 AREXPORT const char *ArTempDirectoryHelper::getTempDirectory()
 {
   return myTempDirectory.c_str();
 }
-
 
 AREXPORT const char *ArTempDirectoryHelper::getBaseDirectory()
 {
   return myBaseDirectory.c_str();
 }
 
-  
-
-AREXPORT bool ArTempDirectoryHelper::moveFileToBaseDirectory
-                           (const char *fileName)
+AREXPORT bool ArTempDirectoryHelper::moveFileToBaseDirectory(const char *fileName)
 {
-  if (!ArUtil::isStrEmpty(fileName)) {
+  if (!ArUtil::isStrEmpty(fileName))
+  {
     std::list<std::string> fileNameList;
     fileNameList.push_back(fileName);
     return moveFilesToBaseDirectory(fileNameList);
   }
-  else {
+  else
+  {
     ArLog::log(ArLog::Normal,
                "ArTempDirectoryHelper::moveFileToBaseDirectory() cannot move empty file name");
     return false;
@@ -78,10 +74,7 @@ AREXPORT bool ArTempDirectoryHelper::moveFileToBaseDirectory
 
 } // end method moveFileToBaseDirectory
 
-  
-
-AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory
-                           (const std::list<std::string> &fileNameList)
+AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory(const std::list<std::string> &fileNameList)
 {
 
   bool isSuccess = true;
@@ -92,9 +85,9 @@ AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory
   if (ArUtil::strcasecmp(myBaseDirectory, myTempDirectory) != 0)
   {
 #ifndef WIN32
-    char *mvName = "mv";
+    const char *mvName = "mv";
 #else
-    char *mvName = "move";
+    const char *mvName = "move";
 #endif
 
     char systemBuf[6400];
@@ -105,31 +98,36 @@ AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory
 
     for (std::list<std::string>::const_iterator iter = fileNameList.begin();
          iter != fileNameList.end();
-         iter++) {
-
+         iter++)
+    {
 
       std::string sourceFileName = *iter;
 
-      if (sourceFileName.empty()) {
+      if (sourceFileName.empty())
+      {
         continue; // Nothing to be done for this file...
       }
 
-      if (myTempDirectory.size() > 0) {
-        snprintf(fromBuf, sizeof(fromBuf), "%s%s", 
-	               myTempDirectory.c_str(), sourceFileName.c_str());
+      if (myTempDirectory.size() > 0)
+      {
+        snprintf(fromBuf, sizeof(fromBuf), "%s%s",
+                 myTempDirectory.c_str(), sourceFileName.c_str());
       }
-      else {
-        snprintf(fromBuf, sizeof(fromBuf), "%s", 
+      else
+      {
+        snprintf(fromBuf, sizeof(fromBuf), "%s",
                  sourceFileName.c_str());
       }
 
       ArUtil::fixSlashes(fromBuf, sizeof(fromBuf));
 
-      if (myBaseDirectory.size() > 0) {
-        snprintf(toBuf, sizeof(toBuf), "%s%s", 
-	               myBaseDirectory.c_str(), sourceFileName.c_str());
+      if (myBaseDirectory.size() > 0)
+      {
+        snprintf(toBuf, sizeof(toBuf), "%s%s",
+                 myBaseDirectory.c_str(), sourceFileName.c_str());
       }
-      else {
+      else
+      {
         snprintf(toBuf, sizeof(toBuf), "%s", sourceFileName.c_str());
       }
 
@@ -139,51 +137,57 @@ AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory
       sprintf(systemBuf, "%s \"%s\" \"%s\"", mvName, fromBuf, toBuf);
 
       ArLog::log(ArLog::Normal, "Moving with '%s'", systemBuf);
-    
+
       // Call our pre move callbacks
-      if (isFirstMoveCmd) {
+      if (isFirstMoveCmd)
+      {
         isFirstMoveCmd = false;
-    
-        for (std::list<ArFunctor *>::iterator preIt = myPreMoveCallbacks.begin(); 
-	           preIt != myPreMoveCallbacks.end(); 
-          	 preIt++) {
+
+        for (std::list<ArFunctor *>::iterator preIt = myPreMoveCallbacks.begin();
+             preIt != myPreMoveCallbacks.end();
+             preIt++)
+        {
           (*preIt)->invoke();
         }
       } // end if first move command
-    
+
       // move file
       int ret = system(systemBuf);
       if (ret == 0)
       {
-        ArLog::log(ArLog::Verbose, 
-                   "ArTempDirectoryHelper: Moved file %s (with %s)", 
-		               sourceFileName.c_str(), 
+        ArLog::log(ArLog::Verbose,
+                   "ArTempDirectoryHelper: Moved file %s (with %s)",
+                   sourceFileName.c_str(),
                    systemBuf);
-     
-        if (iter == fileNameList.begin()) {
+
+        if (iter == fileNameList.begin())
+        {
           isSuccess = true;
         }
       }
       else // error moving file
       {
-        ArLog::log(ArLog::Normal, 
-		               "ArTempDirectoryHelper: Couldn't move %s (ret of '%s' is %d) removing file", 
-		               sourceFileName.c_str(), 
-                   systemBuf, 
+        ArLog::log(ArLog::Normal,
+                   "ArTempDirectoryHelper: Couldn't move %s (ret of '%s' is %d) removing file",
+                   sourceFileName.c_str(),
+                   systemBuf,
                    ret);
 
-         unlink(fromBuf);
-         if (iter == fileNameList.begin()) { 
-           isSuccess = false;
-         }
-      } // end else error moving file 
+        unlink(fromBuf);
+        if (iter == fileNameList.begin())
+        {
+          isSuccess = false;
+        }
+      } // end else error moving file
     } // end for each file
 
     // If files were moved, then call the post move callbacks
-    if (!isFirstMoveCmd) {
-      for (std::list<ArFunctor *>::iterator postIt = myPostMoveCallbacks.begin(); 
-           postIt != myPostMoveCallbacks.end(); 
-           postIt++) {
+    if (!isFirstMoveCmd)
+    {
+      for (std::list<ArFunctor *>::iterator postIt = myPostMoveCallbacks.begin();
+           postIt != myPostMoveCallbacks.end();
+           postIt++)
+      {
         (*postIt)->invoke();
       }
     }
@@ -194,83 +198,77 @@ AREXPORT bool ArTempDirectoryHelper::moveFilesToBaseDirectory
 
 } // end method moveFilesToBaseDirectory
 
-
-AREXPORT std::string ArTempDirectoryHelper::makeTempFilePathName
-                                                (const char *fileName)
+AREXPORT std::string ArTempDirectoryHelper::makeTempFilePathName(const char *fileName)
 {
   return makeFilePathName(fileName,
                           myTempDirectory.c_str());
 }
 
-AREXPORT std::string ArTempDirectoryHelper::makeBaseFilePathName
-                                                (const char *fileName)
+AREXPORT std::string ArTempDirectoryHelper::makeBaseFilePathName(const char *fileName)
 {
   return makeFilePathName(fileName,
                           myBaseDirectory.c_str());
 }
 
-AREXPORT std::string ArTempDirectoryHelper::makeFilePathName
-                                                (const char *fileName,
-                                                 const char *dirName)
+AREXPORT std::string ArTempDirectoryHelper::makeFilePathName(const char *fileName,
+                                                             const char *dirName)
 {
 
-  if (ArUtil::isStrEmpty(fileName)) {
+  if (ArUtil::isStrEmpty(fileName))
+  {
     return "";
   }
-  
+
   std::string filePathName;
 
   if ((!ArUtil::isStrEmpty(dirName)) &&
       (fileName[0] != '/') &&
-      (fileName[0] != '\\') ) {
+      (fileName[0] != '\\'))
+  {
     filePathName = myTempDirectory;
     filePathName += fileName;
   }
-  else {
+  else
+  {
     filePathName = fileName;
   }
 
   return filePathName;
 
 } // end method makeFilePathName
-  
-  
+
 AREXPORT void ArTempDirectoryHelper::addPreMoveCallback(
-	ArFunctor *functor, ArListPos::Pos position)
+    ArFunctor *functor, ArListPos::Pos position)
 {
   if (position == ArListPos::FIRST)
     myPreMoveCallbacks.push_front(functor);
   else if (position == ArListPos::LAST)
     myPreMoveCallbacks.push_back(functor);
   else
-    ArLog::log(ArLog::Terse, 
-       "ArTempDirectoryHelper::addPreMoveCallback: Invalid position.");
+    ArLog::log(ArLog::Terse,
+               "ArTempDirectoryHelper::addPreMoveCallback: Invalid position.");
 }
 
-
 AREXPORT void ArTempDirectoryHelper::remPreMoveCallback(
-	ArFunctor *functor)
+    ArFunctor *functor)
 {
   myPreMoveCallbacks.remove(functor);
 }
 
-
 AREXPORT void ArTempDirectoryHelper::addPostMoveCallback(
-	ArFunctor *functor, ArListPos::Pos position)
+    ArFunctor *functor, ArListPos::Pos position)
 {
   if (position == ArListPos::FIRST)
     myPostMoveCallbacks.push_front(functor);
   else if (position == ArListPos::LAST)
     myPostMoveCallbacks.push_back(functor);
   else
-    ArLog::log(ArLog::Terse, 
-       "ArTempDirectoryHelper::addPostMoveCallback: Invalid position.");
+    ArLog::log(ArLog::Terse,
+               "ArTempDirectoryHelper::addPostMoveCallback: Invalid position.");
 }
 
-
 AREXPORT void ArTempDirectoryHelper::remPostMoveCallback(
-	ArFunctor *functor)
+    ArFunctor *functor)
 {
   myPostMoveCallbacks.remove(functor);
 }
-

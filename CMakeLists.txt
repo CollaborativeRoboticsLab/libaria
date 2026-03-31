@@ -1,38 +1,23 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(libaria)
+cmake_minimum_required(VERSION 3.16)
+project(libaria VERSION 2.9.1 LANGUAGES C CXX)
 
-set(CMAKE_BUILD_TYPE Release)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+include(CTest)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format -Wno-format-security")
+find_package(Threads REQUIRED)
 
-find_package(catkin REQUIRED)
-
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  LIBRARIES Aria ArNetworking
-)
-
-###########
-## Build ##
-###########
-
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-  include
-  ArNetworking/include
-)
+option(LIBARIA_BUILD_LEGACY_TEST_PROGRAMS "Build curated legacy test executables" ON)
+option(LIBARIA_BUILD_LEGACY_EXAMPLE_PROGRAMS "Build curated legacy example executables" ON)
+option(LIBARIA_BUILD_SAFE_TEST_RUNNER "Build the safe non-motion test runner" ON)
+option(LIBARIA_BUILD_HARDWARE_TEST_RUNNER "Build the opt-in hardware test runner" ON)
+option(LIBARIA_REGISTER_HARDWARE_CTEST "Register the hardware test runner with CTest" OFF)
 
 set(ARIA_SRC
   src/ArAction.cpp
@@ -200,6 +185,8 @@ set(AR_NETWORKING_SRC
   ArNetworking/src/ArClientData.cpp
   ArNetworking/src/ArClientFileUtils.cpp
   ArNetworking/src/ArClientHandlerConfig.cpp
+  ArNetworking/src/ArClientHandlerRobotUpdate.cpp
+  ArNetworking/src/ArClientRatioDrive.cpp
   ArNetworking/src/ArClientSimpleConnector.cpp
   ArNetworking/src/ArClientSwitchManager.cpp
   ArNetworking/src/ArHybridForwarderVideo.cpp
@@ -240,22 +227,250 @@ set(AR_NETWORKING_SRC
 add_library(Aria SHARED ${ARIA_SRC})
 add_library(ArNetworking SHARED ${AR_NETWORKING_SRC})
 
+add_executable(omron_robot_cli
+  tools/omron_robot_cli.cpp
+)
+
+function(libaria_add_aria_program target source)
+  add_executable(${target} ${source})
+  target_include_directories(${target}
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/Aria
+      ${CMAKE_CURRENT_SOURCE_DIR}/ArNetworking/include
+  )
+  target_link_libraries(${target}
+    PRIVATE
+      Aria
+  )
+  set_target_properties(${target} PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+  )
+endfunction()
+
+target_compile_options(Aria PRIVATE
+  $<$<CXX_COMPILER_ID:GNU,Clang>:-Wno-format -Wno-format-security>
+)
+
+target_compile_options(ArNetworking PRIVATE
+  $<$<CXX_COMPILER_ID:GNU,Clang>:-Wno-format -Wno-format-security>
+)
+
+target_include_directories(Aria
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_include_directories(ArNetworking
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ArNetworking/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_link_libraries(Aria
+  PRIVATE
+    Threads::Threads
+    ${CMAKE_DL_LIBS}
+    rt
+    m
+)
+
+target_link_libraries(ArNetworking
+  PUBLIC
+    Aria
+)
+
+target_link_libraries(omron_robot_cli
+  PRIVATE
+    ArNetworking
+)
+
+set_target_properties(omron_robot_cli PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+)
+
+set_target_properties(Aria ArNetworking PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+)
+
+set(LIBARIA_SAFE_TEST_SOURCES
+  tests/actionArgumentTest.cpp
+  tests/actionAverageTest.cpp
+  tests/angleBetweenTest.cpp
+  tests/angleFixTest.cpp
+  tests/angleTest.cpp
+  tests/lineTest.cpp
+  tests/mathTests.cpp
+  tests/robotListTest.cpp
+)
+
+set(LIBARIA_MANUAL_TEST_SOURCES
+  tests/absoluteHeadingActionTest.cpp
+)
+
+set(LIBARIA_SAFE_EXAMPLE_SOURCES
+  examples/functorExample.cpp
+  examples/threadExample.cpp
+)
+
+set(LIBARIA_MANUAL_EXAMPLE_SOURCES
+  examples/simpleConnect.cpp
+  examples/simpleMotionCommands.cpp
+  examples/teleopActionsExample.cpp
+)
+
+set(LIBARIA_SAFE_RUNNER_DEPENDENCIES)
+set(LIBARIA_HARDWARE_RUNNER_DEPENDENCIES)
+
+if(LIBARIA_BUILD_LEGACY_TEST_PROGRAMS)
+  foreach(source IN LISTS LIBARIA_SAFE_TEST_SOURCES LIBARIA_MANUAL_TEST_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    libaria_add_aria_program(${target} ${source})
+  endforeach()
+
+  foreach(source IN LISTS LIBARIA_SAFE_TEST_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    list(APPEND LIBARIA_SAFE_RUNNER_DEPENDENCIES ${target})
+  endforeach()
+
+  foreach(source IN LISTS LIBARIA_MANUAL_TEST_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    list(APPEND LIBARIA_HARDWARE_RUNNER_DEPENDENCIES ${target})
+  endforeach()
+endif()
+
+if(LIBARIA_BUILD_LEGACY_EXAMPLE_PROGRAMS)
+  foreach(source IN LISTS LIBARIA_SAFE_EXAMPLE_SOURCES LIBARIA_MANUAL_EXAMPLE_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    libaria_add_aria_program(${target} ${source})
+  endforeach()
+
+  foreach(source IN LISTS LIBARIA_SAFE_EXAMPLE_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    list(APPEND LIBARIA_SAFE_RUNNER_DEPENDENCIES ${target})
+  endforeach()
+
+  foreach(source IN LISTS LIBARIA_MANUAL_EXAMPLE_SOURCES)
+    get_filename_component(target ${source} NAME_WE)
+    list(APPEND LIBARIA_HARDWARE_RUNNER_DEPENDENCIES ${target})
+  endforeach()
+endif()
+
+if(LIBARIA_BUILD_SAFE_TEST_RUNNER AND LIBARIA_SAFE_RUNNER_DEPENDENCIES)
+  add_executable(libaria_safe_test_runner
+    tests/libariaSafeTestRunner.cpp
+  )
+  target_link_libraries(libaria_safe_test_runner
+    PRIVATE
+      Aria
+  )
+  set_target_properties(libaria_safe_test_runner PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+  )
+  add_dependencies(libaria_safe_test_runner ${LIBARIA_SAFE_RUNNER_DEPENDENCIES})
+
+  add_custom_target(run_libaria_safe_tests
+    COMMAND libaria_safe_test_runner
+    DEPENDS libaria_safe_test_runner
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  if(BUILD_TESTING)
+    add_test(
+      NAME libaria_safe_test_runner
+      COMMAND libaria_safe_test_runner
+    )
+    set_tests_properties(libaria_safe_test_runner PROPERTIES
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  endif()
+endif()
+
+if(LIBARIA_BUILD_HARDWARE_TEST_RUNNER AND LIBARIA_HARDWARE_RUNNER_DEPENDENCIES)
+  add_executable(libaria_hardware_test_runner
+    tests/libariaHardwareTestRunner.cpp
+  )
+  target_link_libraries(libaria_hardware_test_runner
+    PRIVATE
+      Aria
+  )
+  set_target_properties(libaria_hardware_test_runner PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+  )
+  add_dependencies(libaria_hardware_test_runner ${LIBARIA_HARDWARE_RUNNER_DEPENDENCIES})
+
+  add_custom_target(run_libaria_hardware_tests
+    COMMAND libaria_hardware_test_runner
+    DEPENDS libaria_hardware_test_runner
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  if(BUILD_TESTING AND LIBARIA_REGISTER_HARDWARE_CTEST)
+    add_test(
+      NAME libaria_hardware_test_runner
+      COMMAND libaria_hardware_test_runner
+    )
+    set_tests_properties(libaria_hardware_test_runner PROPERTIES
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      LABELS "hardware"
+    )
+  endif()
+endif()
+
 #############
 ## Install ##
 #############
 
-install(TARGETS Aria ArNetworking
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS Aria ArNetworking omron_robot_cli
+  EXPORT libariaTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(DIRECTORY include/Aria/
-  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/Aria
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Aria
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 install(DIRECTORY ArNetworking/include/
-  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ArNetworking
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ArNetworking
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/libariaConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libariaConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/libariaConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libaria
+)
+
+install(EXPORT libariaTargets
+  FILE libariaTargets.cmake
+  NAMESPACE libaria::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libaria
+)
+
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/libariaConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/libariaConfigVersion.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/package.xml"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libaria
 )

@@ -91,4 +91,6 @@ int main(void)
     printf("\nTest ran successfully!\n");
   else
     printf("\nTest failed!\n");
+
+  return error ? 1 : 0;
 }

@@ -19,9 +19,9 @@ Copyright (C) 2016 Omron Adept Technologies, Inc.
      along with this program; if not, write to the Free Software
      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-If you wish to redistribute ARIA under different terms, contact 
-Adept MobileRobots for information about a commercial version of ARIA at 
-robots@mobilerobots.com or 
+If you wish to redistribute ARIA under different terms, contact
+Adept MobileRobots for information about a commercial version of ARIA at
+robots@mobilerobots.com or
 Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 */
 #include <Aria/ArExport.h>
@@ -36,14 +36,11 @@ Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 
 #include <time.h>
 
-
 ArStrMap ArCondition::ourStrMap;
 
-
-AREXPORT ArCondition::ArCondition() :
-  myFailedInit(false),
-  myCond(),
-  myMutex(false)
+AREXPORT ArCondition::ArCondition() : myFailedInit(false),
+                                      myCond(),
+                                      myMutex(false)
 {
   myMutex.setLogName("ArCondition::myMutex");
   pthread_condattr_t attr;
@@ -52,25 +49,25 @@ AREXPORT ArCondition::ArCondition() :
   if (pthread_cond_init(&myCond, &attr) != 0)
   {
     ArLog::log(ArLog::Terse, "ArCondition::ArCondition: Unknown error trying to create the condition.");
-    myFailedInit=true;
+    myFailedInit = true;
   }
 
   pthread_condattr_destroy(&attr);
 
-  ourStrMap[STATUS_FAILED]="General failure";
-  ourStrMap[STATUS_FAILED_DESTROY]=
-  "Another thread is waiting on this condition so it can not be destroyed";
+  ourStrMap[STATUS_FAILED] = "General failure";
+  ourStrMap[STATUS_FAILED_DESTROY] =
+      "Another thread is waiting on this condition so it can not be destroyed";
   ourStrMap[STATUS_FAILED_INIT] =
-  "Failed to initialize thread. Requested action is imposesible";
-  ourStrMap[STATUS_MUTEX_FAILED_INIT]="The underlying mutex failed to init";
-  ourStrMap[STATUS_MUTEX_FAILED]="The underlying mutex failed in some fashion";
+      "Failed to initialize thread. Requested action is imposesible";
+  ourStrMap[STATUS_MUTEX_FAILED_INIT] = "The underlying mutex failed to init";
+  ourStrMap[STATUS_MUTEX_FAILED] = "The underlying mutex failed in some fashion";
 }
 
 AREXPORT ArCondition::~ArCondition()
 {
   int ret;
 
-  ret=pthread_cond_destroy(&myCond);
+  ret = pthread_cond_destroy(&myCond);
   if (ret == EBUSY)
     ArLog::log(ArLog::Terse, "ArCondition::~ArCondition: Trying to destroy a condition that another thread is waiting on.");
   else if (ret != 0)
@@ -82,16 +79,16 @@ AREXPORT int ArCondition::signal()
   if (myFailedInit)
   {
     ArLog::log(ArLog::Terse, "ArCondition::signal: Initialization of condition failed, failed to signal");
-    return(STATUS_FAILED_INIT);
+    return (STATUS_FAILED_INIT);
   }
 
   if (pthread_cond_signal(&myCond) != 0)
   {
     ArLog::log(ArLog::Terse, "ArCondition::signal: Unknown error while trying to signal the condition.");
-    return(STATUS_FAILED);
+    return (STATUS_FAILED);
   }
 
-  return(0);
+  return (0);
 }
 
 AREXPORT int ArCondition::broadcast()
@@ -99,16 +96,16 @@ AREXPORT int ArCondition::broadcast()
   if (myFailedInit)
   {
     ArLog::log(ArLog::Terse, "ArCondition::broadcast: Initialization of condition failed, failed to broadcast");
-    return(STATUS_FAILED_INIT);
+    return (STATUS_FAILED_INIT);
   }
 
   if (pthread_cond_broadcast(&myCond) != 0)
   {
     ArLog::log(ArLog::Terse, "ArCondition::broadcast: Unknown error while trying to broadcast the condition.");
-    return(STATUS_FAILED);
+    return (STATUS_FAILED);
   }
 
-  return(0);
+  return (0);
 }
 
 AREXPORT int ArCondition::wait()
@@ -118,40 +115,40 @@ AREXPORT int ArCondition::wait()
   if (myFailedInit)
   {
     ArLog::log(ArLog::Terse, "ArCondition::wait: Initialization of condition failed, failed to wait");
-    return(STATUS_FAILED_INIT);
+    return (STATUS_FAILED_INIT);
   }
 
-  ret=myMutex.lock();
+  ret = myMutex.lock();
   if (ret != 0)
   {
     if (ret == ArMutex::STATUS_FAILED_INIT)
-      return(STATUS_MUTEX_FAILED_INIT);
+      return (STATUS_MUTEX_FAILED_INIT);
     else
-      return(STATUS_MUTEX_FAILED);
+      return (STATUS_MUTEX_FAILED);
   }
 
-  ret=pthread_cond_wait(&myCond, &myMutex.getMutex());
+  ret = pthread_cond_wait(&myCond, &myMutex.getMutex());
   if (ret != 0)
   {
     if (ret == EINTR)
-      return(STATUS_WAIT_INTR);
+      return (STATUS_WAIT_INTR);
     else
     {
       ArLog::log(ArLog::Terse, "ArCondition::wait: Unknown error while trying to wait on the condition.");
-      return(STATUS_FAILED);
+      return (STATUS_FAILED);
     }
   }
 
-  ret=myMutex.unlock();
+  ret = myMutex.unlock();
   if (ret != 0)
   {
     if (ret == ArMutex::STATUS_FAILED_INIT)
-      return(STATUS_MUTEX_FAILED_INIT);
+      return (STATUS_MUTEX_FAILED_INIT);
     else
-      return(STATUS_MUTEX_FAILED);
+      return (STATUS_MUTEX_FAILED);
   }
 
-  return(0);
+  return (0);
 }
 
 AREXPORT int ArCondition::timedWait(unsigned int msecs)
@@ -162,16 +159,16 @@ AREXPORT int ArCondition::timedWait(unsigned int msecs)
   if (myFailedInit)
   {
     ArLog::log(ArLog::Terse, "ArCondition::wait: Initialization of condition failed, failed to wait");
-    return(STATUS_FAILED_INIT);
+    return (STATUS_FAILED_INIT);
   }
 
-  ret=myMutex.lock();
+  ret = myMutex.lock();
   if (ret != 0)
   {
     if (ret == ArMutex::STATUS_FAILED_INIT)
-      return(STATUS_MUTEX_FAILED_INIT);
+      return (STATUS_MUTEX_FAILED_INIT);
     else
-      return(STATUS_MUTEX_FAILED);
+      return (STATUS_MUTEX_FAILED);
   }
 
   /*
@@ -190,7 +187,6 @@ AREXPORT int ArCondition::timedWait(unsigned int msecs)
 #ifdef _POSIX_TIMERS
   clock_gettime(CLOCK_REALTIME, &spec);
 #else
-#warning posix realtime timer not available so using gettimeofday instead of clock_gettime
   struct timeval tp;
   gettimeofday(&tp, NULL);
   spec.tv_sec = tp.tv_sec;
@@ -204,11 +200,10 @@ AREXPORT int ArCondition::timedWait(unsigned int msecs)
     spec.tv_sec += 1;
     spec.tv_nsec -= 1000 * 1000 * 1000;
   }
-  
 
   int timedWaitErrno;
-  
-  ret=pthread_cond_timedwait(&myCond, &myMutex.getMutex(), &spec);
+
+  ret = pthread_cond_timedwait(&myCond, &myMutex.getMutex(), &spec);
   timedWaitErrno = errno;
 
   /*
@@ -218,36 +213,36 @@ AREXPORT int ArCondition::timedWait(unsigned int msecs)
 
   // must unlock the mutex, even if we fail, since we reacquire lock
   // after timedwait times out
-  retUnlock=myMutex.unlock();
-  
+  retUnlock = myMutex.unlock();
+
   if (ret != 0)
   {
     if (ret == EINTR)
-      return(STATUS_WAIT_INTR);
+      return (STATUS_WAIT_INTR);
     else if (ret == ETIMEDOUT)
-      return(STATUS_WAIT_TIMEDOUT);
+      return (STATUS_WAIT_TIMEDOUT);
     else
     {
-      ArLog::logErrorFromOS(ArLog::Terse, "ArCondition::timedWait: Unknown error while trying to wait on the condition. Ret %d, %s.  Errno %d, %s.", 
-			    ret, strerror(ret),
-			    timedWaitErrno, strerror(timedWaitErrno));
+      ArLog::logErrorFromOS(ArLog::Terse, "ArCondition::timedWait: Unknown error while trying to wait on the condition. Ret %d, %s.  Errno %d, %s.",
+                            ret, strerror(ret),
+                            timedWaitErrno, strerror(timedWaitErrno));
 
-      return(STATUS_FAILED);
+      return (STATUS_FAILED);
     }
   }
 
   if (retUnlock != 0)
   {
     if (retUnlock == ArMutex::STATUS_FAILED_INIT)
-      return(STATUS_MUTEX_FAILED_INIT);
+      return (STATUS_MUTEX_FAILED_INIT);
     else
-      return(STATUS_MUTEX_FAILED);
+      return (STATUS_MUTEX_FAILED);
   }
 
-  return(0);
+  return (0);
 }
 
-AREXPORT const char * ArCondition::getError(int messageNumber) const
+AREXPORT const char *ArCondition::getError(int messageNumber) const
 {
   ArStrMap::const_iterator it;
   if ((it = ourStrMap.find(messageNumber)) != ourStrMap.end())

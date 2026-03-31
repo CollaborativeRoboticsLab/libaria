@@ -127,7 +127,7 @@ AREXPORT void ArClientHandlerConfig::requestConfigFromServer(void)
   IFDEBUG(ArLog::log(ArLog::Normal,
                      "ArClientHandlerConfig::requestConfigFromServer()"));
 
-  char *getConfigPacketName = "getConfigBySectionsV4";
+  const char *getConfigPacketName = "getConfigBySectionsV4";
   bool isInsertPriority = true;
   bool isInsertRestartLevel = true;
 
@@ -161,7 +161,7 @@ AREXPORT void ArClientHandlerConfig::requestConfigFromServer(void)
     } // end if packet name V3 does not exist
   } // end if packet name V4 does not exist
 
-  char *setConfigPacketName = "setConfigBySectionsV2";
+  const char *setConfigPacketName = "setConfigBySectionsV2";
   ArFunctor1C<ArClientHandlerConfig, ArNetPacket *> *setConfigCB = &myHandleSetConfigBySectionsV2CB;
   
   if (!myClient->dataExists(setConfigPacketName)) {
@@ -431,7 +431,7 @@ AREXPORT void ArClientHandlerConfig::saveConfigToServer(
 
   bool isMultiplePackets = true;
   int version = 2;
-  char *setConfigPacketName = "setConfigBySectionsV2";
+  const char *setConfigPacketName = "setConfigBySectionsV2";
   if (!myClient->dataExists(setConfigPacketName)) {
 
     setConfigPacketName = "setConfigBySections";

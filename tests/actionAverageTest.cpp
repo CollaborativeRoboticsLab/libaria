@@ -46,9 +46,21 @@ int main(void)
   addAction(&cv2, 50);
   
   des = Resolver.resolve(&Actions, NULL);
+  if (ArMath::fabs(des->getVel() - 300.0) > 0.01)
+  {
+    printf("des %.2f, should be 300\n", des->getVel());
+    return 1;
+  }
   printf("des %.2f, should be 300\n", des->getVel());
 
   addAction(&cv3, 50);
   des = Resolver.resolve(&Actions, NULL);
+  if (ArMath::fabs(des->getVel() - 366.67) > 0.05)
+  {
+    printf("des %.2f, should be 366.67\n", des->getVel());
+    return 1;
+  }
   printf("des %.2f, should be 366.67\n", des->getVel());
+
+  return 0;
 }

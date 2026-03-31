@@ -19,16 +19,16 @@ Copyright (C) 2016 Omron Adept Technologies, Inc.
      along with this program; if not, write to the Free Software
      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-If you wish to redistribute ARIA under different terms, contact 
-Adept MobileRobots for information about a commercial version of ARIA at 
-robots@mobilerobots.com or 
+If you wish to redistribute ARIA under different terms, contact
+Adept MobileRobots for information about a commercial version of ARIA at
+robots@mobilerobots.com or
 Adept MobileRobots, 10 Columbia Drive, Amherst, NH 03031; +1-603-881-7960
 */
 #include "Aria.h"
 #include "ariaUtil.h"
 
 void testIntersection(ArLine *line1, ArLine *line2, double x, double y,
-		      char *name)
+                      const char *name)
 {
   ArPose pose;
 
@@ -53,7 +53,7 @@ void testIntersection(ArLine *line1, ArLine *line2, double x, double y,
 }
 
 void testIntersection(ArLineSegment *line1, ArLine *line2, double x, double y,
-		      char *name)
+                      const char *name)
 {
   ArPose pose;
 
@@ -77,8 +77,8 @@ void testIntersection(ArLineSegment *line1, ArLine *line2, double x, double y,
   }
 }
 
-void testIntersection(ArLineSegment *line1, ArLineSegment *line2, 
-		      double x, double y, char *name)
+void testIntersection(ArLineSegment *line1, ArLineSegment *line2,
+                      double x, double y, const char *name)
 {
   ArPose pose;
 
@@ -102,11 +102,11 @@ void testIntersection(ArLineSegment *line1, ArLineSegment *line2,
   }
 }
 
-void testPerp(ArLineSegment *segment, ArPose perp, ArPose perpPoint, 
-	      char *name)
+void testPerp(ArLineSegment *segment, ArPose perp, ArPose perpPoint,
+              const char *name)
 {
   ArPose pose;
-  if (!segment->getPerpPoint(perp, &pose) || 
+  if (!segment->getPerpPoint(perp, &pose) ||
       fabs(pose.getX() - perpPoint.getX()) > .001 ||
       fabs(pose.getY() - perpPoint.getY()) > .001)
   {
@@ -115,13 +115,13 @@ void testPerp(ArLineSegment *segment, ArPose perp, ArPose perpPoint,
   }
 }
 
-void testNotPerp(ArLineSegment *segment, ArPose perp, char *name)
+void testNotPerp(ArLineSegment *segment, ArPose perp, const char *name)
 {
   ArPose pose;
   if (segment->getPerpPoint(perp, &pose))
   {
     printf("%s was perp but shouldn't have been, at %.0f %.0f\n", name,
-	   pose.getX(), pose.getY());
+           pose.getX(), pose.getY());
     exit(1);
   }
 }
@@ -140,7 +140,6 @@ int main(void)
   testIntersection(&xLineSeg, &yLine, 100, 0, "xLineSeg and yLine");
   testIntersection(&yLineSeg, &xLine, 100, 0, "yLineSeg and xLine");
   testIntersection(&xLineSeg, &yLineSeg, 100, 0, "xLineSeg and yLineSeg");
-  
 
   // test the perp on all the segments
   testPerp(&xLineSeg, ArPose(-2000, 50), ArPose(-2000, 0), "xLineSeg end1");
@@ -150,7 +149,7 @@ int main(void)
   testNotPerp(&xLineSeg, ArPose(3000, 0), "xLineSeg way beyond end2");
   testNotPerp(&xLineSeg, ArPose(-2001, 0), "xLineSeg beyond end1");
   testNotPerp(&xLineSeg, ArPose(-3000, 0), "xLineSeg way beyond end1");
-  
+
   testPerp(&xLineSeg, ArPose(1000, 0), ArPose(1000, 0), "xLineSeg point on line");
 
   printf("All tests completed successfully\n");

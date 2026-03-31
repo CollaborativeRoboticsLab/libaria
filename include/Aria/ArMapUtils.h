@@ -373,7 +373,7 @@ inline bool operator<(const ArMapFileLine & line1, const ArMapFileLine & line2 )
  * @internal
  * @swigomit
  */
-struct ArMapFileLineCompare : public std::binary_function<const ArMapFileLine &, const ArMapFileLine &, bool> 
+struct ArMapFileLineCompare
 {
   /// Returns true if line1 is less than line2; false, otherwise.
   bool operator()(const ArMapFileLine &line1,
@@ -456,9 +456,7 @@ inline bool operator<(const ArMapFileLineGroup & group1,
 /** @internal  
  *  @swigomit
  */
-struct ArMapFileLineGroupCompare : public std::binary_function<const ArMapFileLineGroup &, 
-                                                               const ArMapFileLineGroup &, 
-                                                               bool> {
+struct ArMapFileLineGroupCompare {
   bool operator()(const ArMapFileLineGroup &group1,
                   const ArMapFileLineGroup &group2) 
   { 
@@ -473,10 +471,7 @@ struct ArMapFileLineGroupCompare : public std::binary_function<const ArMapFileLi
 /** @internal  
  *  @swigomit
  */
-struct ArMapFileLineGroupLineNumCompare : 
-                  public std::binary_function<const ArMapFileLineGroup &, 
-                                              const ArMapFileLineGroup &, 
-                                              bool> {
+struct ArMapFileLineGroupLineNumCompare {
   bool operator()(const ArMapFileLineGroup &group1,
                   const ArMapFileLineGroup &group2) 
   { 

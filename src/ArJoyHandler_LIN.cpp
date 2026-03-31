@@ -41,7 +41,7 @@ bool ArJoyHandler::init(void)
   if (myUseOld)
   {
     myOldJoyDesc = ArUtil::fopen("/dev/js0", "r");
-    if(myOldJoyDesc > 0)
+    if (myOldJoyDesc != NULL)
       ArLog::log(ArLog::Verbose, "ArJoyHandler: Opened /dev/js0 (old Linux device name scheme)");
   }
   else
@@ -49,7 +49,7 @@ bool ArJoyHandler::init(void)
     for (i = 0; i < 32; i++)
     {
       sprintf(myJoyNameTemp, "/dev/input/js%d", i);
-      if ((myJoyDesc = ArUtil::open(myJoyNameTemp, O_RDONLY | O_NONBLOCK)) > 0)
+      if ((myJoyDesc = ArUtil::open(myJoyNameTemp, O_RDONLY | O_NONBLOCK)) >= 0)
       {
         ArLog::log(ArLog::Verbose, "ArJoyHandler: Opened %s", myJoyNameTemp);
         break;
@@ -57,7 +57,7 @@ bool ArJoyHandler::init(void)
     }
   }
   
-  if ((myUseOld && myOldJoyDesc != NULL) || (!myUseOld && myJoyDesc > 0))
+  if ((myUseOld && myOldJoyDesc != NULL) || (!myUseOld && myJoyDesc >= 0))
   {
     myPhysMax = 255;
     myInitialized = true;
@@ -138,7 +138,7 @@ void ArJoyHandler::getNewData(void)
     int tempDesc;
     myLastOpenTry.setToNow();
     sprintf(myJoyNameTemp, "/dev/input/js%d", myJoyNumber + 1);
-    if ((tempDesc = ArUtil::open(myJoyNameTemp, O_RDWR | O_NONBLOCK)) > 0)
+    if ((tempDesc = ArUtil::open(myJoyNameTemp, O_RDWR | O_NONBLOCK)) >= 0)
     {
       ArLog::log(ArLog::Verbose, "ArJoyHandler: Opened next joydev %s", myJoyNameTemp);
       close(myJoyDesc);
@@ -148,7 +148,7 @@ void ArJoyHandler::getNewData(void)
     }
     else if (myJoyNumber > 0)
     {
-      if ((tempDesc = ArUtil::open("/dev/input/js0", O_RDWR | O_NONBLOCK)) > 0)
+      if ((tempDesc = ArUtil::open("/dev/input/js0", O_RDWR | O_NONBLOCK)) >= 0)
       {
 	myInitialized = true;
 	ArLog::log(ArLog::Verbose, "ArJoyHandler: Opened first joydev /dev/input/js0");
