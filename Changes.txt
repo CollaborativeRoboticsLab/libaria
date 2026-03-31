@@ -1,6 +1,6 @@
 
 
-Aria 2.9.2-dev
+Aria 3.0.0-dev
 March 31, 2026
 ---------------------------
 
@@ -15,6 +15,10 @@ Build and packaging changes:
   * converted library setup to target-based CMake
   * added install/export rules and generated CMake package config files
     for downstream consumers
+* Added curated CMake build support for selected legacy tests and examples,
+  plus dedicated safe and hardware test runner targets.
+* Added the missing ArNetworking client sources needed to build modern
+  client-side utilities with CMake.
 
 Ubuntu 24.04 / GCC 13 compatibility fixes:
 * Replaced deprecated sys_errlist/sys_nerr usage in ArLog with strerror()
@@ -24,11 +28,34 @@ Ubuntu 24.04 / GCC 13 compatibility fixes:
   CMake include path layout.
 * Fixed Linux joystick code to use valid pointer checks and to accept file
   descriptor 0 as a valid open descriptor.
+* Cleaned a set of GCC 13 warnings and correctness issues in Linux, MTX,
+  GPS, config, and ArNetworking sources to make C++17 builds quieter and
+  easier to maintain.
+
+Tools, tests, and documentation:
+* Added omron_robot_cli, a standalone non-ROS command-line utility for
+  connecting to and driving a robot through ArNetworking using ROS 1 style
+  defaults.
+* Added docs/cli.md with build, connection, command, and troubleshooting
+  guidance for the new CLI.
+* Replaced the top-level README with a short modern entry point and archived
+  the legacy long-form README under docs/README_old.md.
+* Added docs/tests_examples.md describing the curated test/example build,
+  safe runner workflow, hardware runner workflow, and manual robot-motion
+  validation steps.
+* Updated selected legacy tests to return meaningful process exit codes so
+  automated runners can detect pass/fail correctly.
+* Removed obsolete Visual Studio project and solution files from tests/ and
+  examples/ now that those workflows are covered by CMake.
 
 Validation:
 * Verified plain CMake configure/build works on Ubuntu 24.04.
 * Verified colcon build --packages-select libaria succeeds from the workspace
   root.
+* Verified the standalone CLI builds and reports usage correctly.
+* Verified the safe test runner passes without robot hardware.
+* Verified the hardware test runner fails cleanly without a connected robot,
+  making hardware dependencies explicit.
 
 Aria 2.9.1
 October 14, 2016
