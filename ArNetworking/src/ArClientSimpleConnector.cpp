@@ -112,6 +112,8 @@ AREXPORT bool ArClientSimpleConnector::parseArgs(ArArgumentParser *parser)
 					    &myPassword) ||
       !parser->checkParameterArgumentString("-pwd", 
 					    &myPassword) ||
+      !parser->checkParameterArgumentString("-pw", 
+					    &myPassword) ||
       !parser->checkParameterArgumentString("-setServerKey", 
 					    &myServerKey) ||
       !parser->checkParameterArgumentString("-ssk", 
@@ -134,6 +136,7 @@ AREXPORT void ArClientSimpleConnector::logOptions(void) const
   ArLog::log(ArLog::Terse, "-u <user>");
   ArLog::log(ArLog::Terse, "-password <password>");
   ArLog::log(ArLog::Terse, "-pwd <password>");
+  ArLog::log(ArLog::Terse, "-pw <password>");
   ArLog::log(ArLog::Terse, "-nopassword");
   ArLog::log(ArLog::Terse, "-np");
   ArLog::log(ArLog::Terse, "-logDataList");

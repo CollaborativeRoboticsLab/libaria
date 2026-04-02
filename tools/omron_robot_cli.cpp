@@ -15,6 +15,7 @@ namespace
     const char *kDefaultHost = "172.19.21.203";
     const char *kDefaultPort = "7272";
     const char *kDefaultUser = "steve";
+    const char *kPreferredProtocols[] = {"D6MTX", "5MTX"};
 
     bool hasArgument(int argc, char **argv, const char *argument)
     {
@@ -91,7 +92,52 @@ namespace
             << "\n"
             << "Connection defaults match the ROS 1 node: -host " << kDefaultHost
             << " -p " << kDefaultPort
-            << " -u " << kDefaultUser << " -np\n";
+            << " -u " << kDefaultUser << " -np\n"
+            << "Protocol defaults: tries D6MTX, then 5MTX. Override with -protocol <value>.\n";
+    }
+
+    bool connectWithProtocol(ArClientBase &client,
+                             ArClientSimpleConnector &clientConnector,
+                             const char *protocol,
+                             bool printAttempt)
+    {
+        if (printAttempt)
+        {
+            std::cout << "Trying protocol " << protocol << "...\n";
+        }
+
+        client.enforceProtocolVersion(protocol);
+        return clientConnector.connectClient(&client);
+    }
+
+    bool connectWithProtocolFallback(ArClientBase &client,
+                                     ArClientSimpleConnector &clientConnector,
+                                     const char *requestedProtocol,
+                                     std::string &chosenProtocol)
+    {
+        if (requestedProtocol != NULL)
+        {
+            chosenProtocol = (requestedProtocol[0] == '\0') ? "server-advertised" : requestedProtocol;
+            return connectWithProtocol(client, clientConnector, requestedProtocol, false);
+        }
+
+        for (const char *protocol : kPreferredProtocols)
+        {
+            chosenProtocol = protocol;
+            if (connectWithProtocol(client, clientConnector, protocol, true))
+            {
+                return true;
+            }
+
+            if (!client.wasRejected())
+            {
+                return false;
+            }
+
+            client.disconnect();
+        }
+
+        return false;
     }
 
     class DockInfoWatcher
@@ -245,11 +291,19 @@ int main(int argc, char **argv)
     ArLog::init(ArLog::StdOut, ArLog::Normal);
 
     ArClientBase client;
-    client.enforceProtocolVersion("5MTX");
 
     ArArgumentParser parser(&argc, argv);
     parser.loadDefaultArguments();
     applyRos1Defaults(argc, argv, parser);
+
+    const char *requestedProtocol = NULL;
+    if (!parser.checkParameterArgumentString("-protocol", &requestedProtocol) ||
+        !parser.checkParameterArgumentString("--protocol", &requestedProtocol))
+    {
+        printHelp();
+        Aria::exit(1);
+        return 1;
+    }
 
     ArClientSimpleConnector clientConnector(&parser);
     if (!clientConnector.parseArgs() || !parser.checkHelpAndWarnUnparsed())
@@ -260,11 +314,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (!clientConnector.connectClient(&client))
+    std::string chosenProtocol;
+    if (!connectWithProtocolFallback(client, clientConnector, requestedProtocol, chosenProtocol))
     {
         if (client.wasRejected())
         {
-            std::cerr << "Server '" << client.getHost() << "' rejected the connection.\n";
+            std::cerr << "Server '" << client.getHost() << "' rejected the connection for protocol '"
+                      << chosenProtocol << "'.\n";
         }
         else
         {
@@ -293,7 +349,8 @@ int main(int argc, char **argv)
 
     ArUtil::sleep(500);
 
-    std::cout << "Connected to " << client.getHost() << ". Type 'help' for commands.\n";
+    std::cout << "Connected to " << client.getHost() << " using protocol " << chosenProtocol
+              << ". Type 'help' for commands.\n";
     printStatus(updates, dockInfo);
 
     std::string line;

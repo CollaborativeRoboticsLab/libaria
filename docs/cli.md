@@ -10,7 +10,7 @@ send a small set of operator commands for motion, navigation and docking.
 ## What It Tests
 
 - Network connection to the robot server
-- ArNetworking protocol compatibility using `5MTX`
+- ArNetworking protocol compatibility using `D6MTX` first, then `5MTX`
 - Robot state updates such as mode, status, pose, velocity and battery
 - Basic operator commands such as stop, safe drive, ratio drive and goto pose
 - Dock request support when the server exposes the dock interface
@@ -55,7 +55,7 @@ If your robot uses different settings, override them on the command line:
 	-np
 ```
 
-If the server requires a password, use `-pw` instead of `-np`:
+If the server requires a password, use `-pw` (or `-pwd`) instead of `-np`:
 
 ```bash
 /home/ubuntu/colcon_ws/install/libaria/bin/omron_robot_cli \
@@ -69,11 +69,22 @@ If the server requires a password, use `-pw` instead of `-np`:
 
 On successful connection the tool:
 
-- Enforces the `5MTX` protocol version
+- Tries `D6MTX`, then `5MTX`, unless you override it with `-protocol <value>`
 - Starts the ArNetworking client asynchronously
 - Requests robot update packets
 - Subscribes to dock state updates if the server provides `dockInfoChanged`
 - Enters an interactive prompt: `omron>`
+
+To disable protocol enforcement entirely and accept the server-advertised version, pass an empty protocol string:
+
+```bash
+/home/ubuntu/colcon_ws/install/libaria/bin/omron_robot_cli \
+	-host 192.168.0.50 \
+	-p 7272 \
+	-u operator \
+	-pw secret \
+	-protocol ""
+```
 
 ## Commands
 
