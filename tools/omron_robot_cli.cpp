@@ -14,9 +14,9 @@
 
 namespace
 {
-    const char *kDefaultHost = "172.19.21.203";
+    const char *kDefaultHost = "192.168.1.1";
     const char *kDefaultPort = "7272";
-    const char *kDefaultUser = "steve";
+    const char *kDefaultUser = "admin";
     const char *kPreferredProtocols[] = {"6MTX", "D6MTX", "5MTX"};
 
     bool hasArgument(int argc, char **argv, const char *argument)
