@@ -148,6 +148,7 @@ namespace
         const bool hasSafeDrive = connected && client->dataExists("setSafeDrive");
         const bool hasRatioDrive = connected && client->dataExists("ratioDrive");
         const bool hasGotoPose = connected && client->dataExists("gotoPose");
+        const bool hasResetTripOdometer = connected && client->dataExists("ResetTripOdometer");
         const bool hasDock = connected && client->dataExists("dock");
         const bool hasUndock = connected && client->dataExists("undock");
 
@@ -165,6 +166,8 @@ namespace
                                 std::string("Ratio drive percentages ") + capabilityText(connected, hasRatioDrive));
         printCommandSummaryLine("cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct]",
                     std::string("Twist-style velocity command ") + capabilityText(connected, hasRatioDrive));
+        printCommandSummaryLine("resetOdometer",
+                    std::string("Reset trip odometer ") + capabilityText(connected, hasResetTripOdometer));
         printCommandSummaryLine("goto <x_m> <y_m> <theta_deg>",
                                 std::string("Send gotoPose ") + capabilityText(connected, hasGotoPose));
         printCommandSummaryLine("dock", std::string("Request docking ") + capabilityText(connected, hasDock));
@@ -357,6 +360,17 @@ namespace
             return false;
         }
         client.requestOnce("undock");
+        return true;
+    }
+
+    bool sendResetOdometer(ArClientBase &client)
+    {
+        if (!client.dataExists("ResetTripOdometer"))
+        {
+            std::cout << "Server does not advertise ResetTripOdometer.\n";
+            return false;
+        }
+        client.requestOnce("ResetTripOdometer");
         return true;
     }
 
@@ -604,6 +618,13 @@ int main(int argc, char **argv)
                     ArUtil::sleep(durationMs);
                     ratioDrive.stop();
                     std::cout << "Timed cmdvel completed and stop requested.\n";
+                }
+            }
+            else if (command == "resetOdometer")
+            {
+                if (sendResetOdometer(client))
+                {
+                    std::cout << "ResetTripOdometer requested.\n";
                 }
             }
             else if (command == "goto")
