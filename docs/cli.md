@@ -120,7 +120,7 @@ stop                                                                     Stop mo
 safe                                                                     Enable safe drive (available)
 unsafe                                                                   Disable safe drive (available)
 ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]       Ratio drive percentages (available)
-cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]             Raw ratioDrive packet (available)
+cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct] Twist-style velocity command (available)
 goto <x_m> <y_m> <theta_deg>                                             Send gotoPose (available)
 dock                                                                     Request docking (available)
 undock                                                                   Request undocking (available)
@@ -221,10 +221,12 @@ Notes:
 
 For initial testing, start with small values such as `5` or `10`.
 
-### `cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]`
+### `cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct]`
 
-Sends a raw `ratioDrive` request packet directly, matching the pattern used by
-the ROS 1 node.
+Sends a Twist-style velocity command by converting linear and angular speeds
+into `ratioDrive` percentages. The default conversion assumes `0.5 m/s`
+corresponds to `100%` translational drive and `1.0 rad/s` corresponds to `100%`
+rotational drive.
 
 Examples:
 
@@ -233,8 +235,8 @@ cmdvel 0.1 0.0 1000
 cmdvel 0.0 0.2 1000
 ```
 
-This command is useful when you want to validate the exact network request path
-used by the ROS 1 driver instead of the `ArClientRatioDrive` helper class.
+This command is useful when you want CLI behavior to match ROS `Twist` inputs.
+For raw ratio percentages, use `ratio`.
 
 ### `goto <x_m> <y_m> <theta_deg>`
 

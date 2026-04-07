@@ -18,6 +18,8 @@ namespace
     const char *kDefaultPort = "7272";
     const char *kDefaultUser = "admin";
     const char *kPreferredProtocols[] = {"6MTX", "D6MTX", "5MTX"};
+    const double kDefaultCmdVelMaxLinearMps = 0.5;
+    const double kDefaultCmdVelMaxAngularRadS = 1.0;
 
     bool hasArgument(int argc, char **argv, const char *argument)
     {
@@ -74,6 +76,20 @@ namespace
             throw std::runtime_error(std::string("Invalid ") + name + ": " + text);
         }
         return static_cast<int>(value);
+    }
+
+    double clampPercent(double value)
+    {
+        return std::max(-100.0, std::min(100.0, value));
+    }
+
+    double toRatioPercent(double value, double maxAbsValue)
+    {
+        if (maxAbsValue <= 0.0)
+        {
+            return 0.0;
+        }
+        return clampPercent((value / maxAbsValue) * 100.0);
     }
 
     void printCommandSummaryLine(const std::string &command, const std::string &description)
@@ -147,8 +163,8 @@ namespace
         printCommandSummaryLine("unsafe", std::string("Disable safe drive ") + capabilityText(connected, hasSafeDrive));
         printCommandSummaryLine("ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]",
                                 std::string("Ratio drive percentages ") + capabilityText(connected, hasRatioDrive));
-        printCommandSummaryLine("cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]",
-                                std::string("Raw ratioDrive packet ") + capabilityText(connected, hasRatioDrive));
+        printCommandSummaryLine("cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct]",
+                    std::string("Twist-style velocity command ") + capabilityText(connected, hasRatioDrive));
         printCommandSummaryLine("goto <x_m> <y_m> <theta_deg>",
                                 std::string("Send gotoPose ") + capabilityText(connected, hasGotoPose));
         printCommandSummaryLine("dock", std::string("Request docking ") + capabilityText(connected, hasDock));
@@ -344,7 +360,7 @@ namespace
         return true;
     }
 
-    void sendCmdVel(ArClientBase &client, double linear, double angular, double throttle, double lateral)
+    void sendCmdVel(ArClientBase &client, double linearMps, double angularRadS, double throttle, double lateral)
     {
         if (!client.dataExists("ratioDrive"))
         {
@@ -352,8 +368,8 @@ namespace
         }
 
         ArNetPacket packet;
-        packet.doubleToBuf(linear);
-        packet.doubleToBuf(angular);
+        packet.doubleToBuf(toRatioPercent(linearMps, kDefaultCmdVelMaxLinearMps));
+        packet.doubleToBuf(toRatioPercent(angularRadS, kDefaultCmdVelMaxAngularRadS));
         packet.doubleToBuf(throttle);
         packet.doubleToBuf(lateral);
         client.requestOnce("ratioDrive", &packet);
@@ -555,7 +571,7 @@ int main(int argc, char **argv)
                 std::string angularArg;
                 if (!(input >> linearArg >> angularArg))
                 {
-                    throw std::runtime_error("Usage: cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]");
+                    throw std::runtime_error("Usage: cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct]");
                 }
 
                 const double linear = parseDouble(linearArg, "linear");
@@ -579,8 +595,10 @@ int main(int argc, char **argv)
                 }
 
                 sendCmdVel(client, linear, angular, throttle, lateral);
-                std::cout << "ratioDrive packet sent: linear=" << linear << " angular=" << angular
-                          << " throttle=" << throttle << " lat=" << lateral << "\n";
+                std::cout << "cmdvel sent: linear=" << linear << " m/s angular=" << angular
+                          << " rad/s -> trans=" << toRatioPercent(linear, kDefaultCmdVelMaxLinearMps)
+                          << "% rot=" << toRatioPercent(angular, kDefaultCmdVelMaxAngularRadS)
+                          << "% throttle=" << throttle << " lat=" << lateral << "\n";
                 if (durationMs > 0)
                 {
                     ArUtil::sleep(durationMs);
