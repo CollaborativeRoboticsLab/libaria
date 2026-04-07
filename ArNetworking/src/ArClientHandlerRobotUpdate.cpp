@@ -151,16 +151,20 @@ void ArClientHandlerRobotUpdate::handleUpdateNumbers(ArNetPacket *packet)
 void ArClientHandlerRobotUpdate::handleUpdateStrings(ArNetPacket *packet)
 {
   /* Extract the data from the updateStrings packet. Its format is
-   * status and mode (null-terminated strings).
+   * status, mode, and optionally extended status (null-terminated strings).
    */
   char s[256];
   char m[256];
+  char extendedStatus[2048];
   bool statusChanged = false;
   bool modeChanged = false;
   memset(s, 0, 256);
   memset(m, 0, 256);
+  memset(extendedStatus, 0, sizeof(extendedStatus));
   packet->bufToStr(s, 256);
   packet->bufToStr(m, 256);
+  if (packet->getDataLength() > packet->getReadLength())
+    packet->bufToStr(extendedStatus, sizeof(extendedStatus));
 
   lock();
   if(myStatus != s)
@@ -175,6 +179,10 @@ void ArClientHandlerRobotUpdate::handleUpdateStrings(ArNetPacket *packet)
 	  //ArLog::log(ArLog::Normal, "mode %s\n");
       myMode = m;
   }
+  if (extendedStatus[0] != '\0')
+    myExtendedStatus = extendedStatus;
+  else
+    myExtendedStatus = s;
   unlock();
 
   if(modeChanged)

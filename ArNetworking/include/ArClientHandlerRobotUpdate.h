@@ -170,6 +170,7 @@ public:
    * this string if you wish to store it.
    */
 	const char *getStatus() { return myStatus.c_str(); }
+	const char *getExtendedStatus() { return myExtendedStatus.c_str(); }
 
   /** Get pointer to mode string most recently received from server. Use
    * lock() and unlock() to protect from changes by other threads; you must copy
@@ -189,6 +190,7 @@ protected:
 	ArMutex myMutex;
 	RobotData myData;
 	std::string myStatus;
+  std::string myExtendedStatus;
 	std::string myMode;
 	ArFunctor1C<ArClientHandlerRobotUpdate,  ArNetPacket*> myHandleUpdateStringsCB;
 	ArFunctor1C<ArClientHandlerRobotUpdate, ArNetPacket*> myHandleUpdateNumbersCB;

@@ -1296,16 +1296,17 @@ AREXPORT void ArClientBase::processPacket(ArNetPacket *packet, bool tcp)
 
 void ArClientBase::buildList(ArNetPacket *packet)
 {
+  const size_t largeFieldBufferSize = 16384;
   ArClientData *clientData;
   unsigned int listLen;
   unsigned int i;
   unsigned int command;
   char name[512];
   char description[512];
-  char argDesc[1024];
-  char retDesc[1024];
-  char commandGroup[512];
-  char dataFlags[512];
+  char argDesc[largeFieldBufferSize];
+  char retDesc[largeFieldBufferSize];
+  char commandGroup[largeFieldBufferSize];
+  char dataFlags[largeFieldBufferSize];
 
   // if its a single list snag it and run
   if (packet->getCommand() == ArServerCommands::LISTSINGLE)

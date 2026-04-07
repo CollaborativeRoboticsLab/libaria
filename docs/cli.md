@@ -10,7 +10,7 @@ send a small set of operator commands for motion, navigation and docking.
 ## What It Tests
 
 - Network connection to the robot server
-- ArNetworking protocol compatibility using `D6MTX` first, then `5MTX`
+- ArNetworking protocol compatibility using `6MTX` first, then legacy fallbacks
 - Robot state updates such as mode, status, pose, velocity and battery
 - Basic operator commands such as stop, safe drive, ratio drive and goto pose
 - Dock request support when the server exposes the dock interface
@@ -65,15 +65,34 @@ If the server requires a password, use `-pw` (or `-pwd`) instead of `-np`:
 	-pw secret
 ```
 
+To inspect every advertised request on the connected robot interface, add
+`--check-interface`:
+
+```bash
+/home/ubuntu/colcon_ws/install/libaria/bin/omron_robot_cli \
+	-host 192.168.1.1 \
+	-p 7272 \
+	-u admin \
+	-pw admin \
+	--check-interface
+```
+
 ## Startup Behavior
 
 On successful connection the tool:
 
-- Tries `D6MTX`, then `5MTX`, unless you override it with `-protocol <value>`
+- Tries `6MTX`, then `D6MTX`, then `5MTX`, unless you override it with `-protocol <value>`
 - Starts the ArNetworking client asynchronously
 - Requests robot update packets
 - Subscribes to dock state updates if the server provides `dockInfoChanged`
+- Prints a startup summary with the local CLI commands and their live server availability
 - Enters an interactive prompt: `omron>`
+
+If you pass `--check-interface`, the tool also prints the full list of server
+requests advertised by the robot after connecting.
+
+`6MTX` is the protocol currently advertised by the robot on port `7272`. The
+fallbacks remain available for older controllers or mixed environments.
 
 To disable protocol enforcement entirely and accept the server-advertised version, pass an empty protocol string:
 
@@ -88,7 +107,31 @@ To disable protocol enforcement entirely and accept the server-advertised versio
 
 ## Commands
 
-Type `help` at the prompt to print the built-in command summary.
+Type `help` or `options` at the prompt to print the built-in command summary.
+
+The command summary is formatted as one command per line, for example:
+
+```text
+help                                                                     Show this summary
+options                                                                  Show this summary
+status                                                                   Show one robot state snapshot
+watch [count] [interval_ms]                                              Stream repeated status snapshots
+stop                                                                     Stop motion (available)
+safe                                                                     Enable safe drive (available)
+unsafe                                                                   Disable safe drive (available)
+ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]       Ratio drive percentages (available)
+cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]             Raw ratioDrive packet (available)
+goto <x_m> <y_m> <theta_deg>                                             Send gotoPose (available)
+dock                                                                     Request docking (available)
+undock                                                                   Request undocking (available)
+quit                                                                     Exit the CLI
+```
+
+Availability is evaluated against the live server after connection.
+
+When `--check-interface` is enabled, the tool prints a separate list of all
+advertised server requests, one per line. Use that list to discover robot-side
+services beyond the built-in CLI commands.
 
 ### `status`
 
@@ -218,6 +261,20 @@ dock
 
 If the server does not advertise `dock`, the command reports that instead of
 sending the request.
+
+### `undock`
+
+Sends an `undock` request to the server when that interface is advertised.
+
+Example:
+
+```text
+undock
+```
+
+If the server does not advertise `undock`, the CLI reports that and keeps the
+session active. If you need to inspect the full server interface, run the CLI
+with `--check-interface`.
 
 ### `quit`
 

@@ -3,19 +3,21 @@
 #include <ArClientRatioDrive.h>
 #include <ArNetworking.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace
 {
     const char *kDefaultHost = "172.19.21.203";
     const char *kDefaultPort = "7272";
     const char *kDefaultUser = "steve";
-    const char *kPreferredProtocols[] = {"D6MTX", "5MTX"};
+    const char *kPreferredProtocols[] = {"6MTX", "D6MTX", "5MTX"};
 
     bool hasArgument(int argc, char **argv, const char *argument)
     {
@@ -74,26 +76,84 @@ namespace
         return static_cast<int>(value);
     }
 
-    void printHelp()
+    void printCommandSummaryLine(const std::string &command, const std::string &description)
     {
+        std::cout << "  " << std::left << std::setw(72) << command << description << "\n";
+    }
+
+    std::vector<std::string> collectAvailableRequests(ArClientBase &client)
+    {
+        std::vector<std::string> requests;
+        const std::map<unsigned int, ArClientData *> *dataMap = client.getDataMap();
+        if (dataMap == NULL)
+        {
+            return requests;
+        }
+
+        for (std::map<unsigned int, ArClientData *>::const_iterator it = dataMap->begin();
+             it != dataMap->end(); ++it)
+        {
+            if (it->second == NULL)
+            {
+                continue;
+            }
+            requests.push_back(it->second->getName());
+        }
+
+        std::sort(requests.begin(), requests.end());
+        requests.erase(std::unique(requests.begin(), requests.end()), requests.end());
+        return requests;
+    }
+
+    const char *availabilityLabel(bool available)
+    {
+        return available ? "available" : "not advertised";
+    }
+
+    std::string capabilityText(bool connected, bool available)
+    {
+        return connected ? std::string("(") + availabilityLabel(available) + ")" : "(server dependent)";
+    }
+
+    void printAvailableRequests(ArClientBase &client)
+    {
+        const std::vector<std::string> requests = collectAvailableRequests(client);
+        std::cout << "Available server requests (" << requests.size() << "):\n";
+        for (size_t i = 0; i < requests.size(); ++i)
+        {
+            std::cout << "  - " << requests[i] << "\n";
+        }
+    }
+
+    void printHelp(ArClientBase *client = NULL)
+    {
+        const bool connected = client != NULL;
+        const bool hasStop = connected && client->dataExists("stop");
+        const bool hasSafeDrive = connected && client->dataExists("setSafeDrive");
+        const bool hasRatioDrive = connected && client->dataExists("ratioDrive");
+        const bool hasGotoPose = connected && client->dataExists("gotoPose");
+        const bool hasDock = connected && client->dataExists("dock");
+        const bool hasUndock = connected && client->dataExists("undock");
+
         std::cout
             << "Commands:\n"
-            << "  help\n"
-            << "  status\n"
-            << "  watch [count] [interval_ms]\n"
-            << "  stop\n"
-            << "  safe\n"
-            << "  unsafe\n"
-            << "  ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]\n"
-            << "  cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]\n"
-            << "  goto <x_m> <y_m> <theta_deg>\n"
-            << "  dock\n"
-            << "  quit\n"
-            << "\n"
-            << "Connection defaults match the ROS 1 node: -host " << kDefaultHost
-            << " -p " << kDefaultPort
-            << " -u " << kDefaultUser << " -np\n"
-            << "Protocol defaults: tries D6MTX, then 5MTX. Override with -protocol <value>.\n";
+            ;
+        printCommandSummaryLine("help", "Show this summary");
+        printCommandSummaryLine("options", "Show this summary");
+        printCommandSummaryLine("status", "Show one robot state snapshot");
+        printCommandSummaryLine("watch [count] [interval_ms]", "Stream repeated status snapshots");
+        printCommandSummaryLine("stop", std::string("Stop motion ") + capabilityText(connected, hasStop));
+        printCommandSummaryLine("safe", std::string("Enable safe drive ") + capabilityText(connected, hasSafeDrive));
+        printCommandSummaryLine("unsafe", std::string("Disable safe drive ") + capabilityText(connected, hasSafeDrive));
+        printCommandSummaryLine("ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]",
+                                std::string("Ratio drive percentages ") + capabilityText(connected, hasRatioDrive));
+        printCommandSummaryLine("cmdvel <linear> <angular> [duration_ms] [throttle_pct] [lat]",
+                                std::string("Raw ratioDrive packet ") + capabilityText(connected, hasRatioDrive));
+        printCommandSummaryLine("goto <x_m> <y_m> <theta_deg>",
+                                std::string("Send gotoPose ") + capabilityText(connected, hasGotoPose));
+        printCommandSummaryLine("dock", std::string("Request docking ") + capabilityText(connected, hasDock));
+        printCommandSummaryLine("undock", std::string("Request undocking ") + capabilityText(connected, hasUndock));
+        printCommandSummaryLine("quit", "Exit the CLI");
     }
 
     bool connectWithProtocol(ArClientBase &client,
@@ -225,6 +285,10 @@ namespace
                   << " m/s lat=" << updates.getLatVel() / 1000.0
                   << " m/s rot=" << updates.getRotVel() << " deg/s\n"
                   << "Battery: " << updates.getVoltage() << " V\n";
+        if (std::string(updates.getExtendedStatus()) != updates.getStatus())
+        {
+            std::cout << "Detail: " << updates.getExtendedStatus() << '\n';
+        }
         updates.unlock();
 
         if (dockInfo.haveDockInfo())
@@ -269,6 +333,17 @@ namespace
         return true;
     }
 
+    bool sendUndock(ArClientBase &client)
+    {
+        if (!client.dataExists("undock"))
+        {
+            std::cout << "Server does not advertise undock. Use 'help' to inspect available dock-related server requests.\n";
+            return false;
+        }
+        client.requestOnce("undock");
+        return true;
+    }
+
     void sendCmdVel(ArClientBase &client, double linear, double angular, double throttle, double lateral)
     {
         if (!client.dataExists("ratioDrive"))
@@ -295,12 +370,13 @@ int main(int argc, char **argv)
     ArArgumentParser parser(&argc, argv);
     parser.loadDefaultArguments();
     applyRos1Defaults(argc, argv, parser);
+    const bool checkInterface = parser.checkArgument("--check-interface") || parser.checkArgument("-check-interface");
 
     const char *requestedProtocol = NULL;
     if (!parser.checkParameterArgumentString("-protocol", &requestedProtocol) ||
         !parser.checkParameterArgumentString("--protocol", &requestedProtocol))
     {
-        printHelp();
+        printHelp(NULL);
         Aria::exit(1);
         return 1;
     }
@@ -308,7 +384,7 @@ int main(int argc, char **argv)
     ArClientSimpleConnector clientConnector(&parser);
     if (!clientConnector.parseArgs() || !parser.checkHelpAndWarnUnparsed())
     {
-        printHelp();
+        printHelp(NULL);
         clientConnector.logOptions();
         Aria::exit(1);
         return 1;
@@ -350,8 +426,13 @@ int main(int argc, char **argv)
     ArUtil::sleep(500);
 
     std::cout << "Connected to " << client.getHost() << " using protocol " << chosenProtocol
-              << ". Type 'help' for commands.\n";
+              << ".\n";
     printStatus(updates, dockInfo);
+    if (checkInterface)
+    {
+        printAvailableRequests(client);
+    }
+    printHelp(&client);
 
     std::string line;
     while (client.getRunningWithLock())
@@ -372,9 +453,9 @@ int main(int argc, char **argv)
 
         try
         {
-            if (command == "help")
+            if (command == "help" || command == "options")
             {
-                printHelp();
+                printHelp(&client);
             }
             else if (command == "status")
             {
@@ -401,16 +482,28 @@ int main(int argc, char **argv)
             }
             else if (command == "stop")
             {
+                if (!client.dataExists("stop"))
+                {
+                    throw std::runtime_error("Server does not advertise stop.");
+                }
                 ratioDrive.stop();
                 std::cout << "Stop requested.\n";
             }
             else if (command == "safe")
             {
+                if (!client.dataExists("setSafeDrive"))
+                {
+                    throw std::runtime_error("Server does not advertise setSafeDrive.");
+                }
                 ratioDrive.safeDrive();
                 std::cout << "Safe drive requested.\n";
             }
             else if (command == "unsafe")
             {
+                if (!client.dataExists("setSafeDrive"))
+                {
+                    throw std::runtime_error("Server does not advertise setSafeDrive.");
+                }
                 ratioDrive.unsafeDrive();
                 std::cout << "Unsafe drive requested.\n";
             }
@@ -520,6 +613,13 @@ int main(int argc, char **argv)
                     std::cout << "Dock requested.\n";
                 }
             }
+            else if (command == "undock")
+            {
+                if (sendUndock(client))
+                {
+                    std::cout << "Undock requested.\n";
+                }
+            }
             else if (command == "quit" || command == "exit")
             {
                 break;
@@ -527,7 +627,7 @@ int main(int argc, char **argv)
             else
             {
                 std::cout << "Unknown command: " << command << "\n";
-                printHelp();
+                printHelp(&client);
             }
         }
         catch (const std::exception &error)
