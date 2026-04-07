@@ -34,6 +34,6 @@ Run the simple connectivity test client:
 
 - Safe automated tests and opt-in hardware tests are split on purpose. The hardware runner is expected to fail when no robot is connected.
 - License details are in `LICENSE.txt`.
-- Package change history is in `Changes.txt`.
+- Package change history is in `Changelog`.
 
 

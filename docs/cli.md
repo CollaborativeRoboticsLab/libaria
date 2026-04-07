@@ -38,11 +38,11 @@ Run the installed executable:
 /home/ubuntu/colcon_ws/install/libaria/bin/omron_robot_cli
 ```
 
-The CLI uses the same default connection settings as the existing ROS 1 driver:
+The CLI defaults to the current standalone test-client settings:
 
-- Host: `172.19.21.203`
+- Host: `192.168.1.1`
 - Port: `7272`
-- User: `steve`
+- User: `admin`
 - Password mode: `-np` (no password)
 
 If your robot uses different settings, override them on the command line:
@@ -51,7 +51,7 @@ If your robot uses different settings, override them on the command line:
 /home/ubuntu/colcon_ws/install/libaria/bin/omron_robot_cli \
 	-host 192.168.0.50 \
 	-p 7272 \
-	-u steve \
+	-u admin \
 	-np
 ```
 

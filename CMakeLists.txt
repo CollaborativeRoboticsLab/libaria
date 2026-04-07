@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(libaria VERSION 2.9.1 LANGUAGES C CXX)
+project(libaria VERSION 3.0.0 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)

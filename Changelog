@@ -1,6 +1,6 @@
 
 
-Aria 3.0.0-dev
+Aria 3.0.0
 March 31, 2026
 ---------------------------
 
@@ -34,8 +34,15 @@ Ubuntu 24.04 / GCC 13 compatibility fixes:
 
 Tools, tests, and documentation:
 * Added omron_robot_cli, a standalone non-ROS command-line utility for
-  connecting to and driving a robot through ArNetworking using ROS 1 style
-  defaults.
+  connecting to and driving a robot through ArNetworking.
+* Followed up the CLI rollout with compatibility fixes for current robot
+  servers:
+  * added protocol fallback across 6MTX, D6MTX, and 5MTX, plus optional
+    interface inspection output
+  * improved ArNetworking client parsing for extended robot status strings
+    and larger advertised request metadata payloads
+  * fixed cmdvel handling so Twist-style inputs are converted into
+    ratio-drive percentages that move the robot reliably
 * Added docs/cli.md with build, connection, command, and troubleshooting
   guidance for the new CLI.
 * Replaced the top-level README with a short modern entry point and archived
