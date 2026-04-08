@@ -77,6 +77,8 @@ To inspect every advertised request on the connected robot interface, add
 	--check-interface
 ```
 
+A sample list of available interfaces is printed in the [Current Interfaces](./current_interfaces.md) document.
+
 ## Startup Behavior
 
 On successful connection the tool:

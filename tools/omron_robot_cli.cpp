@@ -151,10 +151,9 @@ namespace
         const bool hasResetTripOdometer = connected && client->dataExists("ResetTripOdometer");
         const bool hasDock = connected && client->dataExists("dock");
         const bool hasUndock = connected && client->dataExists("undock");
-
+        const bool hasArclCommand = connected && client->dataExists("arclCommand");
         std::cout
-            << "Commands:\n"
-            ;
+            << "Commands:\n";
         printCommandSummaryLine("help", "Show this summary");
         printCommandSummaryLine("options", "Show this summary");
         printCommandSummaryLine("status", "Show one robot state snapshot");
@@ -165,13 +164,13 @@ namespace
         printCommandSummaryLine("ratio <trans_pct> <rot_pct> [duration_ms] [throttle_pct] [lat_pct]",
                                 std::string("Ratio drive percentages ") + capabilityText(connected, hasRatioDrive));
         printCommandSummaryLine("cmdvel <linear_mps> <angular_rad_s> [duration_ms] [throttle_pct] [lat_pct]",
-                    std::string("Twist-style velocity command ") + capabilityText(connected, hasRatioDrive));
-        printCommandSummaryLine("resetOdometer",
-                    std::string("Reset trip odometer ") + capabilityText(connected, hasResetTripOdometer));
+                                std::string("Twist-style velocity command ") + capabilityText(connected, hasRatioDrive));
         printCommandSummaryLine("goto <x_m> <y_m> <theta_deg>",
                                 std::string("Send gotoPose ") + capabilityText(connected, hasGotoPose));
         printCommandSummaryLine("dock", std::string("Request docking ") + capabilityText(connected, hasDock));
         printCommandSummaryLine("undock", std::string("Request undocking ") + capabilityText(connected, hasUndock));
+        printCommandSummaryLine("arcl <command text>",
+                                std::string("Send raw ARCL command text ") + capabilityText(connected, hasArclCommand));
         printCommandSummaryLine("quit", "Exit the CLI");
     }
 
@@ -363,14 +362,17 @@ namespace
         return true;
     }
 
-    bool sendResetOdometer(ArClientBase &client)
+    bool sendArclCommand(ArClientBase &client, const std::string &commandText)
     {
-        if (!client.dataExists("ResetTripOdometer"))
+        if (!client.dataExists("arclCommand"))
         {
-            std::cout << "Server does not advertise ResetTripOdometer.\n";
+            std::cout << "Server does not advertise arclCommand.\n";
             return false;
         }
-        client.requestOnce("ResetTripOdometer");
+
+        ArNetPacket packet;
+        packet.strToBuf(commandText.c_str());
+        client.requestOnce("arclCommand", &packet);
         return true;
     }
 
@@ -462,7 +464,10 @@ int main(int argc, char **argv)
     {
         printAvailableRequests(client);
     }
-    printHelp(&client);
+    else
+    {
+        printHelp(&client);
+    }
 
     std::string line;
     while (client.getRunningWithLock())
@@ -620,13 +625,6 @@ int main(int argc, char **argv)
                     std::cout << "Timed cmdvel completed and stop requested.\n";
                 }
             }
-            else if (command == "resetOdometer")
-            {
-                if (sendResetOdometer(client))
-                {
-                    std::cout << "ResetTripOdometer requested.\n";
-                }
-            }
             else if (command == "goto")
             {
                 std::string xArg;
@@ -657,6 +655,20 @@ int main(int argc, char **argv)
                 if (sendUndock(client))
                 {
                     std::cout << "Undock requested.\n";
+                }
+            }
+            else if (command == "arcl")
+            {
+                std::string commandText;
+                std::getline(input >> std::ws, commandText);
+                if (commandText.empty())
+                {
+                    throw std::runtime_error("Usage: arcl <command text>");
+                }
+
+                if (sendArclCommand(client, commandText))
+                {
+                    std::cout << "arclCommand sent: " << commandText << "\n";
                 }
             }
             else if (command == "quit" || command == "exit")
